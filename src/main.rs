@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::fs;
+use std::{fs, path::Path};
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -14,15 +14,16 @@ fn main() {
     let args = Args::parse();
     let dir = args.user_dir;
 
-
-
     let str_dir = dir.as_str();
 
+    println!("{}", str_dir);
+    let str_dir = "/home/bombarder/dev/js/caddymanager/backend/api";
 
-    if contains_cargo_toml(str_dir) {
-        let res = check();
+    if dbg!(contains_cargo_toml(str_dir)) {
+        let res = check(str_dir);
         if res.is_err() {
             println!("Error checking dependencies");
+            println!("{:?}", res);
             return;
         }
 
@@ -73,7 +74,7 @@ fn main() {
                         new_content.push_str("\n");
                     }
                 }
-                let res = fs::write("Cargo.toml", new_content);
+                let res = fs::write(format!("{}/Cargo.toml", str_dir), new_content);
                 if res.is_err() {
                     println!("Error writing to Cargo.toml");
                     return;
@@ -92,13 +93,12 @@ fn main() {
 
 
 fn contains_cargo_toml(path: &str) -> bool {
-    let path = format!("{}/Cargo.toml", path);
-    fs::metadata(path).is_ok()
+    Path::new(path).join("Cargo.toml").exists()
 }
 
-fn check() -> Result<Vec<String>, ()>{
+fn check(dir: &str) -> Result<Vec<String>, ()>{
     let mut dependencies = Vec::new();
-    let cargo_content = fs::read_to_string("Cargo.toml");
+    let cargo_content = fs::read_to_string(format!("{}/Cargo.toml", dir));
     if cargo_content.is_err() {
         println!("Error reading Cargo.toml");
         return Err(());
@@ -130,7 +130,7 @@ fn check() -> Result<Vec<String>, ()>{
 
     let mut dependencies_in_files: Vec<String> = Vec::new();
 
-    let folder = fs::read_dir("src");
+    let folder = fs::read_dir(format!("{}/src", dir));
     
     if folder.is_err() {
         println!("Error reading folder");
@@ -172,11 +172,11 @@ fn check() -> Result<Vec<String>, ()>{
 
     }
     for dep in &dependencies {
-        if !dependencies_in_files.contains(dep) {
-            println!("Dependency {} not found in file", dep);
-            removable.push(dep.clone());
+           if !dependencies_in_files.contains(dep) {
+                println!("Dependency {} not found in file", dep);
+                removable.push(dep.clone());
+            }
         }
-    }
-    Ok(removable.clone())
+        Ok(removable.clone())
 
 }
