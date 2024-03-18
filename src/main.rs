@@ -17,7 +17,6 @@ fn main() {
     let str_dir = dir.as_str();
 
     println!("{}", str_dir);
-    let str_dir = "/home/bombarder/dev/js/caddymanager/backend/api";
 
     if dbg!(contains_cargo_toml(str_dir)) {
         let res = check(str_dir);
@@ -158,19 +157,18 @@ fn check(dir: &str) -> Result<Vec<String>, ()>{
         let file_content = file_content.unwrap();
 
         for line in file_content.lines() {
-            if line.starts_with("use") {
-                let line = line.trim().split(" ").collect::<Vec<&str>>();
-                if line.len() < 1 {
-                    continue;
+
+            if dependencies.iter().any(|x| line.contains(x)) {
+                for item in dependencies.iter() {
+                    if line.contains(item) && !dependencies_in_files.contains(item) {
+                        dependencies_in_files.push(item.clone());
+                    }
                 }
-                let true_dep: Vec<&str> = line[1].split("::").collect();
-                dependencies_in_files.push(true_dep[0].to_string().replace(";", ""));
             }
         }
         println!("Dependencies in file: {:?}", dependencies_in_files);
-
-
     }
+
     for dep in &dependencies {
            if !dependencies_in_files.contains(dep) {
                 println!("Dependency {} not found in file", dep);
